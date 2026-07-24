@@ -1,0 +1,98 @@
+name: Deploy
+
+# The main-branch release pipeline: build and push every containerized
+# app's image, run database migrations as a release gate (never as
+# part of app startup — see docs/database-migrations-and-rollback.md
+# for why), then deploy. Web apps here assumes Vercel; swap the
+# "Deploy web apps" step for whichever of the 5 deployment guides
+# (docs/deployment-guides/) this repository is actually configured
+# against — this workflow is the container-build/migration backbone
+# every one of those guides shares, not a single hardcoded target.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false # never cancel a deploy mid-flight — a half-applied migration or half-pushed image set is worse than a slightly delayed one
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, worker, studio-web, platform-admin, client-portal, gallery-web, marketing-web, docs-web, status-web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.CONTAINER_REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push ${{ matrix.app }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.CONTAINER_REGISTRY }}/bcp-${{ matrix.app }}:${{ github.sha }}
+            ${{ vars.CONTAINER_REGISTRY }}/bcp-${{ matrix.app }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }} # GitHub Environments gate this job on required reviewers for production — see docs/database-migrations-and-rollback.md
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply pending migrations
+        run: pnpm --filter @bcp/database exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Verify schema is in sync
+        run: pnpm --filter @bcp/database exec prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy-services:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Trigger deploy for api/worker containers
+        run: echo "Deploy step — see docs/deployment-guides/ for the target-specific command (Railway CLI, ECS service update, kubectl rollout, etc.)."
+        # Left deliberately generic: which command runs here depends on which of the 5 supported
+        # targets this deployment actually uses. Each deployment guide states its own exact command.
+
+  deploy-web:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Web apps deploy via their own platform integration
+        run: echo "Vercel/Cloudflare Pages deploy natively on push via their own GitHub integration — no step needed here for those targets. See the relevant deployment guide."

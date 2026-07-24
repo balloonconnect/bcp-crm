@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * BCP Studio OS design tokens.
+ *
+ * Palette direction: cool graphite neutrals (not the common warm-cream
+ * default) with a single "safelight" amber used deliberately — for active
+ * navigation state, focus emphasis, and brand touches — never as a base
+ * surface color. Tenants override --brand/--primary at runtime via
+ * @bcp/branding; every other token stays fixed so contrast ratios hold.
+ */
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 222 24% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 24% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 24% 11%;
+
+    --primary: 222 24% 12%;
+    --primary-foreground: 210 20% 98%;
+
+    --secondary: 210 16% 94%;
+    --secondary-foreground: 222 24% 14%;
+
+    --muted: 210 16% 94%;
+    --muted-foreground: 218 10% 40%;
+
+    --accent: 210 16% 92%;
+    --accent-foreground: 222 24% 14%;
+
+    /* Brand / "safelight" amber — used sparingly and with intent. */
+    --brand: 36 78% 52%;
+    --brand-foreground: 30 40% 12%;
+
+    --destructive: 3 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 153 60% 32%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 36 90% 45%;
+    --warning-foreground: 30 40% 12%;
+
+    --border: 214 16% 89%;
+    --input: 214 16% 89%;
+    --ring: 36 78% 45%;
+
+    --sidebar: 222 24% 11%;
+    --sidebar-foreground: 210 16% 88%;
+    --sidebar-accent: 222 20% 18%;
+    --sidebar-border: 222 18% 20%;
+
+    --overlay: 222 30% 6%;
+
+    --radius: 0.625rem;
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+
+  .dark {
+    --background: 222 22% 7%;
+    --foreground: 210 20% 96%;
+
+    --card: 222 20% 10%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 20% 10%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 210 20% 96%;
+    --primary-foreground: 222 24% 12%;
+
+    --secondary: 222 16% 16%;
+    --secondary-foreground: 210 20% 96%;
+
+    --muted: 222 16% 16%;
+    --muted-foreground: 216 12% 65%;
+
+    --accent: 222 16% 18%;
+    --accent-foreground: 210 20% 96%;
+
+    --brand: 36 82% 58%;
+    --brand-foreground: 30 40% 10%;
+
+    --destructive: 3 68% 56%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 153 50% 45%;
+    --success-foreground: 150 40% 8%;
+
+    --warning: 36 85% 55%;
+    --warning-foreground: 30 40% 10%;
+
+    --border: 222 16% 18%;
+    --input: 222 16% 18%;
+    --ring: 36 82% 58%;
+
+    --sidebar: 222 26% 5%;
+    --sidebar-foreground: 210 16% 85%;
+    --sidebar-accent: 222 20% 14%;
+    --sidebar-border: 222 18% 15%;
+
+    --overlay: 222 40% 2%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Visible, high-contrast focus ring for every interactive element —
+     never rely on :hover alone (see "no hover-only actions" requirement). */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  /* Respect the OS-level reduced-motion preference globally. Individual
+     components additionally read usePrefersReducedMotion() for JS-driven
+     transitions (e.g. drawer slide direction). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Safe-area aware padding for devices with notches / home indicators. */
+  .pt-safe {
+    padding-top: max(theme(spacing.2), env(safe-area-inset-top));
+  }
+  .pb-safe {
+    padding-bottom: max(theme(spacing.2), env(safe-area-inset-bottom));
+  }
+  .pl-safe {
+    padding-left: max(theme(spacing.2), env(safe-area-inset-left));
+  }
+  .pr-safe {
+    padding-right: max(theme(spacing.2), env(safe-area-inset-right));
+  }
+
+  /* Utility for the small set of elements allowed to scroll horizontally
+     on purpose (e.g. a chip filter row) — always paired with a visible
+     scroll affordance/fade in the component itself. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

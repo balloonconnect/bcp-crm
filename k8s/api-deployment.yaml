@@ -1,0 +1,85 @@
+# "Horizontal API scaling" — a genuinely stateless Deployment: no
+# in-memory session state (auth is JWT/Bearer-token based, per
+# docs/security-guide.md), so any replica can serve any request. Scale
+# by changing `replicas` or, better, let the HPA below do it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcp-api
+  namespace: bcp-studio-os
+  labels:
+    app: bcp-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcp-api
+  template:
+    metadata:
+      labels:
+        app: bcp-api
+    spec:
+      containers:
+        - name: api
+          image: ${CONTAINER_REGISTRY}/bcp-api:latest
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: bcp-config
+            - secretRef:
+                name: bcp-secrets
+          # "API health" — the same /health and /health/ready endpoints Prompt 46 built, reused
+          # here as the actual liveness/readiness probes Kubernetes drives traffic decisions from.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcp-api
+  namespace: bcp-studio-os
+spec:
+  selector:
+    app: bcp-api
+  ports:
+    - port: 80
+      targetPort: 4000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bcp-api-hpa
+  namespace: bcp-studio-os
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bcp-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

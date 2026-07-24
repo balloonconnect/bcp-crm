@@ -1,0 +1,42 @@
+{
+  "name": "@bcp/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BCP Studio OS background job worker (BullMQ + Redis)",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --target node20 --clean",
+    "start": "node dist/index.js",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@bcp/billing": "workspace:*",
+    "@bcp/config": "workspace:*",
+    "@bcp/database": "workspace:*",
+    "@bcp/email": "workspace:*",
+    "@bcp/logger": "workspace:*",
+    "@bcp/queue": "workspace:*",
+    "@bcp/permissions": "workspace:*",
+    "@bcp/storage": "workspace:*",
+    "@bcp/whatsapp": "workspace:*",
+    "bullmq": "^5.16.0",
+    "sharp": "^0.33.5",
+    "pdfkit": "^0.15.0",
+    "web-push": "^3.6.7",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/pdfkit": "^0.13.4",
+    "@types/web-push": "^3.6.4",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.1"
+  }
+}

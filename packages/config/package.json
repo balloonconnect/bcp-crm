@@ -1,0 +1,28 @@
+{
+  "name": "@bcp/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared config: env validation, tsconfig presets, eslint presets, tailwind preset",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./tailwind": "./tailwind/preset.ts",
+    "./eslint": "./eslint/base.js"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@bcp/types": "workspace:*",
+    "@types/node": "^20.16.10",
+    "typescript": "^5.6.3",
+    "tailwindcss": "^3.4.13"
+  }
+}

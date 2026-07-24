@@ -1,0 +1,30 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build outputs
+dist
+build
+.next
+out
+.turbo
+coverage
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# generated
+packages/database/generated
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.log
+.vercel
+.idea
+.vscode/*
+!.vscode/extensions.json
+storybook-static

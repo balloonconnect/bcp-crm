@@ -1,0 +1,75 @@
+name: CI
+
+# "CI/CD" — PR checks scoped to only the packages actually affected by
+# a change, via Turborepo's own `--filter=[origin/main]` (already the
+# exact shape docs/deployment.md envisioned before any of this
+# existed). A change to one app's frontend never re-runs the entire
+# monorepo's test suite.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  affected:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — Turborepo's affected-package detection diffs against origin/main
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (affected packages)
+        run: pnpm turbo run lint --filter=[origin/main]
+
+      - name: Typecheck (affected packages)
+        run: pnpm turbo run typecheck --filter=[origin/main]
+
+      - name: Unit + mocked integration tests (affected packages)
+        run: pnpm turbo run test --filter=[origin/main]
+
+      - name: Build (affected packages)
+        run: pnpm turbo run build --filter=[origin/main]
+
+      - name: Dependency audit
+        run: pnpm run security:audit
+        continue-on-error: true # a new advisory shouldn't block every PR; reviewed separately, not gating merges
+
+      - name: Secret scan
+        run: pnpm run security:secrets-scan
+
+  # Testcontainers-based integration tests need a real Postgres, so they run in their own job with
+  # Docker available (GitHub-hosted runners have Docker pre-installed) rather than inside the fast
+  # "affected" job above, matching apps/api's own separate test:integration script (Prompt 45).
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Testcontainers integration tests
+        run: pnpm --filter @bcp/api test:integration

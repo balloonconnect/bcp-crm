@@ -1,0 +1,89 @@
+# Optional overlay that runs the application services in containers too.
+# Local development normally runs infra only (docker-compose.yml) and apps via `pnpm dev`.
+# Use this overlay for staging-like full-stack container runs:
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml up --build
+
+name: bcp-studio-os
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: bcp-api
+    env_file: apps/api/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: bcp-worker
+    env_file: apps/worker/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  marketing-web:
+    build:
+      context: .
+      dockerfile: apps/marketing-web/Dockerfile
+    container_name: bcp-marketing-web
+    ports:
+      - "3000:3000"
+
+  platform-admin:
+    build:
+      context: .
+      dockerfile: apps/platform-admin/Dockerfile
+    container_name: bcp-platform-admin
+    ports:
+      - "3001:3001"
+
+  studio-web:
+    build:
+      context: .
+      dockerfile: apps/studio-web/Dockerfile
+    container_name: bcp-studio-web
+    ports:
+      - "3002:3002"
+
+  client-portal:
+    build:
+      context: .
+      dockerfile: apps/client-portal/Dockerfile
+    container_name: bcp-client-portal
+    ports:
+      - "3003:3003"
+
+  gallery-web:
+    build:
+      context: .
+      dockerfile: apps/gallery-web/Dockerfile
+    container_name: bcp-gallery-web
+    ports:
+      - "3004:3004"
+
+  docs-web:
+    build:
+      context: .
+      dockerfile: apps/docs-web/Dockerfile
+    container_name: bcp-docs-web
+    ports:
+      - "3005:3005"
+
+  status-web:
+    build:
+      context: .
+      dockerfile: apps/status-web/Dockerfile
+    container_name: bcp-status-web
+    ports:
+      - "3006:3006"

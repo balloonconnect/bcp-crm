@@ -1,0 +1,38 @@
+# "SSL" + "Custom domains" at the cluster edge — cert-manager (assumed
+# already installed on the cluster) issues and renews a real
+# Let's Encrypt certificate per host automatically via the
+# `cert-manager.io/cluster-issuer` annotation; nginx-ingress (or any
+# ingress controller supporting the same annotations) terminates TLS
+# and routes each hostname to the right backend Service. A studio's
+# own verified custom domain (Prompt 9/CORS work, Prompt 43) is added
+# here as an additional `host` entry once verified — see
+# docs/deployment-guides/kubernetes.md's "Domain verification" section
+# for the exact process.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bcp-ingress
+  namespace: bcp-studio-os
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m" # gallery photo uploads exceed nginx's default 1m limit
+spec:
+  tls:
+    - hosts:
+        - api.example.com
+        - app.example.com
+        - portal.example.com
+        - gallery.example.com
+        - admin.example.com
+      secretName: bcp-tls-cert
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bcp-api
+                port:
+                  number: 80

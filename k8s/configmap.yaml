@@ -1,0 +1,13 @@
+# Non-secret configuration shared across api/worker — actual secret values
+# (DATABASE_URL, REDIS_URL, S3 credentials, ANTHROPIC_API_KEY, etc.) live in
+# a Secret (secret.example.yaml), never here. See docs/secret-management.md.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcp-config
+  namespace: bcp-studio-os
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  APP_URL: "https://app.example.com"
+  CORS_ALLOWED_ORIGINS: "https://app.example.com,https://portal.example.com,https://admin.example.com"
